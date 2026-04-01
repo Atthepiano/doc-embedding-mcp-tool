@@ -1,0 +1,16 @@
+{
+  "name": "doc-embedding-mcp-tool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/mcp-server.mjs",
+    "mcp": "node src/mcp-server.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^1.46.0",
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "@supabase/supabase-js": "^2.100.0",
+    "zod": "^3.25.76"
+  }
+}
