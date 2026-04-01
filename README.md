@@ -1,48 +1,45 @@
 # Doc Embedding MCP Tool
 
-这是 `doc-embedding` 项目下独立孵化的 MCP 查询工具子仓库形态。
-它现在已经收敛为“自包含运行”模式，不再依赖外层项目路径或外层 `.env`。
+一个可独立分发的 MCP 查询工具。
 
-详细接入步骤见：`USAGE.md`
+它通过 `stdio` 暴露 3 个工具，直接连接 `Supabase + Gemini` 查询已经入库的文档知识库，不依赖外层项目路径，也不依赖 Web API。
 
-它只负责：
+## 它能做什么
 
-- `search_docs`
-- `get_document`
-- `list_files`
+- `search_docs`：搜索知识库片段
+- `get_document`：按路径读取文档全文
+- `list_files`：列出当前知识库文件
 
-它不负责：
+## 它不做什么
 
 - 文档同步
-- GitLab webhook
-- 向量库重建
+- Git webhook
+- 向量重建
+- 文档仓库拉取
 
-## 目录定位
+## 3 分钟接入 Cursor
 
-当前放在主项目目录下：
-
-```text
-doc-embedding/
-└─ mcp-tool/
-```
-
-但它的目标是可被单独拿走、单独维护、单独分发。
-
-## 安装
+### 1. 安装依赖
 
 ```bash
-cd mcp-tool
+git clone https://github.com/Atthepiano/doc-embedding-mcp-tool.git
+cd doc-embedding-mcp-tool
 npm install
 ```
 
-## 配置
+### 2. 配置 `.env`
 
-只会读取两类配置来源：
+```bash
+cp .env.example .env
+```
 
-1. `mcp-tool/.env`
-2. 当前进程环境变量
+Windows PowerShell：
 
-最少需要：
+```powershell
+Copy-Item .env.example .env
+```
+
+最少需要填写：
 
 ```env
 GEMINI_API_KEY=
@@ -57,27 +54,14 @@ DOC_EMBEDDING_MAX_SNIPPET_CHARS=800
 DOC_EMBEDDING_DEFAULT_DOC_CHARS=12000
 ```
 
-建议先复制模板：
+这个工具只读取：
 
-```bash
-cp .env.example .env
-```
+- 当前目录下的 `.env`
+- 当前进程环境变量
 
-如果在 Windows PowerShell 中，可直接：
+### 3. 在 Cursor 里接入
 
-```powershell
-Copy-Item .env.example .env
-```
-
-## 启动
-
-```bash
-npm run mcp
-```
-
-## Cursor 配置示例
-
-如果把它作为当前项目下的子仓库使用，可在 `.cursor/mcp.json` 里配置：
+推荐在 Cursor 的 MCP 配置里直接写绝对路径，不要依赖 `${workspaceFolder}`：
 
 ```json
 {
@@ -85,23 +69,64 @@ npm run mcp
     "doc-embedding": {
       "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/mcp-tool/src/mcp-server.mjs"]
+      "args": ["D:/MCP/doc-embedding-mcp-tool/src/mcp-server.mjs"]
     }
   }
 }
 ```
 
-如果以后它被单独放到其他目录，推荐改成全局 MCP 配置并使用绝对路径。
+只要把路径改成你本机实际存放仓库的位置即可。
 
-## 独立分发说明
+## 本地启动
 
-把整个 `mcp-tool/` 目录单独拿出去也是可以工作的，前提只有两个：
+```bash
+npm run mcp
+```
 
-1. 先执行 `npm install`
-2. 在当前目录准备好 `.env`
+启动后进程会等待 MCP 客户端连接，这是正常现象。
 
-它不要求：
+## 常见用法
 
-- 保留外层 `doc-embedding/`
-- 保留 `web/`
-- 使用 `${workspaceFolder}` 指向母仓
+### 搜索知识库
+
+示例参数：
+
+```json
+{
+  "query": "今晚吃啥",
+  "topK": 5,
+  "threshold": 0.5,
+  "snippetChars": 800
+}
+```
+
+### 读取文档
+
+示例参数：
+
+```json
+{
+  "path": "docs/example.md",
+  "maxChars": 12000
+}
+```
+
+### 列出文件
+
+示例参数：
+
+```json
+{
+  "limit": 500
+}
+```
+
+## 适用场景
+
+- 给 Cursor、Claude Code、其他支持 MCP 的 AI IDE/CLI 做知识库检索
+- 在多个项目之间复用同一套文档查询能力
+- 让使用者只 clone 这个仓库，而不是整个 `doc-embedding` 母仓
+
+## 详细文档
+
+更完整的接入说明、参数说明和常见问题见：`USAGE.md`
